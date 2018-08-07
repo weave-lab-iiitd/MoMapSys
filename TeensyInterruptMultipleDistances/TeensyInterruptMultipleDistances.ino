@@ -1,57 +1,175 @@
 #include <TimerOne.h>                                 // Header file for TimerOne library
 
-#define trigPin1 3                                    // trigger pin1 for Transmitter
-#define trigPin2 5                                    // trigger pin2 for transmitter
-#define trigPin3 7                                    // trigger pin3 for reciever1
-#define trigPin4 9                                    // trigger pin4 for reciever2
-#define echoPin1 8                                    // echo pin1 for reciever1
-#define echoPin2 10                                   // echo pin2 for reciever2
+#define trigTranTop 0                                 // trigger for transmitterTop
+#define trigTranHTop 1                                // trigger for transmitterHalfTop
+#define trigTranHBot 11                               // trigger for transmitterHalfBottom
+#define trigTranBot 12                                // trigger for transmitterBottom
+#define trigLeftCalf 3                                // trigger for leftCalf
+#define trigRightCalf 5                               // trigger for rightCalf
+#define trigRecTop 7                                  // trigger for recieverTop
+#define trigRecHTop 9                                 // trigger for recieverHalfTop  
+#define trigRecHBot 22                                // trigger for recieverHalfBottom
+#define trigRecBot 21                                 // trigger for recieverBottom
+#define echoLeftCalf 4                                // echo pin for leftCalf
+#define echoRightCalf 6                               // echo pin for rightCalf
+#define echoRecTop 8                                  // echoPin for recieverTop
+#define echoRecHTop 10                                // echoPin for recieverHalfTop
+#define echoRecHBot 23                                // echoPin for recieverHalfBottom
+#define echoRecBot 20                                 // echoPin for recieverBottom
 
-#define TIMER_US 50                                   // 50 uS timer duration 
-#define TICK_COUNTS 8000                              
+#define TIMER_US 10                                   // 10 uS timer duration 
+#define TICK_COUNTS 6000                              
 
-volatile long echo11_start = 0;                        // Records start of echo pulse
-volatile long echo21_start = 0;
-volatile long echo12_start = 0;
-volatile long echo22_start = 0; 
-volatile long echo11_end = 0;                          // Records end of echo pulse
-volatile long echo21_end = 0;
-volatile long echo12_end = 0;
-volatile long echo22_end = 0;
-volatile long echo11_duration = 0;                     // Duration - difference between end and start
-volatile long echo21_duration = 0;
-volatile long echo12_duration = 0;
-volatile long echo22_duration = 0;
+volatile long echoTopBot_start = 0;                        // Records start of echo pulse
+volatile long echoTopHBot_start = 0;
+volatile long echoTopHTop_start = 0;
+volatile long echoTopTop_start = 0; 
+volatile long echoHTopBot_start = 0;
+volatile long echoHTopHBot_start = 0;
+volatile long echoHTopHTop_start = 0;
+volatile long echoHTopTop_start = 0;
+volatile long echoHBotBot_start = 0;
+volatile long echoHBotHBot_start = 0;
+volatile long echoHBotHTop_start = 0;
+volatile long echoHBotTop_start = 0;
+volatile long echoBotBot_start = 0;
+volatile long echoBotHBot_start = 0;
+volatile long echoBotHTop_start = 0;
+volatile long echoBotTop_start = 0;
+volatile long echoLeftCalf_start = 0;
+volatile long echoRightCalf_start = 0;
+volatile long echoTopBot_end = 0;   
+volatile long echoTopHBot_end = 0;
+volatile long echoTopHTop_end = 0;
+volatile long echoTopTop_end = 0; 
+volatile long echoHTopBot_end = 0;
+volatile long echoHTopHBot_end = 0;
+volatile long echoHTopHTop_end = 0;
+volatile long echoHTopTop_end = 0;
+volatile long echoHBotBot_end = 0;
+volatile long echoHBotHBot_end = 0;
+volatile long echoHBotHTop_end = 0;
+volatile long echoHBotTop_end = 0;
+volatile long echoBotBot_end = 0;
+volatile long echoBotHBot_end = 0;
+volatile long echoBotHTop_end = 0;
+volatile long echoBotTop_end = 0;
+volatile long echoLeftCalf_end = 0;
+volatile long echoRightCalf_end = 0;
+volatile long echoTopBot_duration = 0;                        // Records start of echo pulse
+volatile long echoTopHBot_duration = 0;
+volatile long echoTopHTop_duration = 0;
+volatile long echoTopTop_duration = 0; 
+volatile long echoHTopBot_duration = 0;
+volatile long echoHTopHBot_duration = 0;
+volatile long echoHTopHTop_duration = 0;
+volatile long echoHTopTop_duration = 0;
+volatile long echoHBotBot_duration = 0;
+volatile long echoHBotHBot_duration = 0;
+volatile long echoHBotHTop_duration = 0;
+volatile long echoHBotTop_duration = 0;
+volatile long echoBotBot_duration = 0;
+volatile long echoBotHBot_duration = 0;
+volatile long echoBotHTop_duration = 0;
+volatile long echoBotTop_duration = 0;
+volatile long echoLeftCalf_duration = 0;
+volatile long echoRightCalf_duration = 0;
 volatile int trigger_time_count = 0;                  // Count down counter to trigger pulse time
+float Lateralangle;
+float rotAngle;
+float CalculateAngles(float,float,float,float,float,float);
+float cosC, cosB;
+float distance1best, distance2best, distance3best;
 
 void setup() 
 {
-  pinMode(trigPin1, OUTPUT);                           // Trigger pin set to output
-  pinMode(trigPin2, OUTPUT);
-  pinMode(trigPin3, OUTPUT);
-  pinMode(trigPin4, OUTPUT);
-  pinMode(echoPin1, INPUT);                            // Echo pin set to input
-  pinMode(echoPin2, INPUT);
+  pinMode(trigTranTop, OUTPUT);                           // Trigger pin set to output
+  pinMode(trigTranHTop, OUTPUT);
+  pinMode(trigTranHBot, OUTPUT);
+  pinMode(trigTranBot, OUTPUT);
+  pinMode(trigRecTop, OUTPUT);
+  pinMode(trigRecHTop, OUTPUT);
+  pinMode(trigRecHBot, OUTPUT);
+  pinMode(trigRecBot, OUTPUT);
+  pinMode(echoLeftCalf, INPUT);                            // Echo pin set to input
+  pinMode(echoRightCalf, INPUT);
+  pinMode(echoRecTop, INPUT);
+  pinMode(echoRecHTop, INPUT);
+  pinMode(echoRecHBot, INPUT);
+  pinMode(echoRecBot, INPUT);
   Timer1.initialize(TIMER_US);                        // Initialise timer 1
   Timer1.attachInterrupt( timerIsr );                 // Attach interrupt to the timer service routine 
-  attachInterrupt(echoPin1, echo_interrupt1, CHANGE);  // Attach interrupt to the sensor echo input
-  attachInterrupt(echoPin2, echo_interrupt2, CHANGE);
+  attachInterrupt(echoLeftCalf, echo_interruptLeftCalf, CHANGE);  // Attach interrupt to the sensor echo input
+  attachInterrupt(echoRightCalf, echo_interruptRightCalf, CHANGE);
+  attachInterrupt(echoRecTop, echo_interruptRecTop, CHANGE);
+  attachInterrupt(echoRecHTop, echo_interruptRecHTop, CHANGE);
+  attachInterrupt(echoRecHBot, echo_interruptRecHBot, CHANGE);
+  attachInterrupt(echoRecBot, echo_interruptRecBot, CHANGE);
   Serial.begin (9600);                                // Initialise the serial monitor output
 }
 
 void loop()
 {
-    Serial.print("Distance 1:");
-    Serial.println(echo11_duration / 58);
-    Serial.print("Distance 2:");
-    Serial.println(echo21_duration / 58);
-    Serial.print("Distance 3:");
-    Serial.println(echo12_duration / 58);
-    Serial.print("Distance 4:");
-    Serial.println(echo22_duration / 58);
+    
+    /*Lateralangle = giveLateralAngle(echo11_duration/58, echo21_duration/58, 5);
+    rotAngle = CalculateAngles(10, 10, echo11_duration/58, echo22_duration/58, echo12_duration/58, echo21_duration/58);
+    cosC = getcosC(echo11_duration/58, echo21_duration/58, 5);
+    cosB = getcosB(echo11_duration/58, echo21_duration/58, 5);*/
+    Serial.print((float)echoTopTop_duration * 0.0343);
+    Serial.print(", ");
+    Serial.print((float)echoTopHTop_duration * 0.0343);
+    Serial.print(", ");
+    Serial.print((float)echoTopHBot_duration * 0.0343);
+    Serial.print(", ");
+    Serial.print((float)echoTopBot_duration * 0.0343);
+    Serial.println(",");
+    Serial.print((float)echoHTopTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHTopHTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHTopHBot_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHTopBot_duration * 0.0343);
+    Serial.println(",");
+    Serial.print((float)echoHBotTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHBotHTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHBotHBot_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoHBotBot_duration * 0.0343);
+    Serial.println(",");
+    Serial.print((float)echoBotTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoBotHTop_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoBotHBot_duration * 0.0343);
+    Serial.print(",");
+    Serial.print((float)echoBotBot_duration * 0.0343);
+    Serial.println(",");
     delay(100);
 }
 
+
+
+float giveLateralAngle(float distance1, float distance2, float distance3)
+{
+  float latangle = 0;
+  float s = (distance1 + distance2 + distance3)/2;
+  float h = 2*sqrt(s*(s-distance1)*(s-distance2)*(s-distance3))/distance3;
+  latangle = map(h, 2, 35, 0, 45); 
+  return latangle;
+}
+
+float getcosC(float distance1, float distance2, float distance3)
+{
+  return (pow(distance1, 2) + pow(distance2, 2) - pow(distance3,2)/(2*distance1*distance2));
+}
+
+float getcosB(float distance1, float distance2, float distance3)
+{
+  return (pow(distance2, 2) + pow(distance3, 2) - pow(distance1,2)/(2*distance3*distance2));
+}
 
 void timerIsr()
 {
@@ -66,9 +184,17 @@ void trigger_pulse()
         state = 1;
         trigger_time_count = TICK_COUNTS;
       }
-      if(trigger_time_count == TICK_COUNTS/2)                   // Count to 200mS
+      if(trigger_time_count == TICK_COUNTS*3/4)                   // Count to 200mS
       {                                              // Time out - Initiate trigger pulse
          state = 2;                                  // Changing to state 1 initiates a pulse
+      }
+      if(trigger_time_count == TICK_COUNTS/2)
+      {
+        state = 3;
+      }
+      if(trigger_time_count == TICK_COUNTS/4)
+      {
+        state = 4;
       }
       trigger_time_count--;
       switch(state)                                  // State machine handles delivery of trigger pulse
@@ -77,26 +203,63 @@ void trigger_pulse()
             break;
         
         case 1:                                      // Initiate pulse
-           digitalWrite(trigPin1, HIGH);              // Set the trigger output high
-           digitalWrite(trigPin3, HIGH);
-           digitalWrite(trigPin4, HIGH);
-           state = 3;                                // and set state to 2
+           digitalWrite(trigTranTop, HIGH);          // Set the trigger output high
+           digitalWrite(trigRecTop, HIGH);
+           digitalWrite(trigRecHTop, HIGH);
+           digitalWrite(trigRecHBot, HIGH);
+           digitalWrite(trigRecBot, HIGH);
+           state = 5;                                // and set state to 2
            break;
         case 2:
-           digitalWrite(trigPin2, HIGH);
-           digitalWrite(trigPin3, HIGH);
-           digitalWrite(trigPin4, HIGH);
-           state = 3;
+           digitalWrite(trigTranHTop, HIGH);             // Set the trigger output high
+           digitalWrite(trigRecTop, HIGH);
+           digitalWrite(trigRecHTop, HIGH);
+           digitalWrite(trigRecHBot, HIGH);
+           digitalWrite(trigRecBot, HIGH);
+           state = 5;
            break;
         case 3:
+           digitalWrite(trigTranHBot, HIGH);             // Set the trigger output high
+           digitalWrite(trigRecTop, HIGH);
+           digitalWrite(trigRecHTop, HIGH);
+           digitalWrite(trigRecHBot, HIGH);
+           digitalWrite(trigRecBot, HIGH);            
+           state = 5;
+           break;
+        case 4:
+           digitalWrite(trigTranBot, HIGH);             // Set the trigger output high
+           digitalWrite(trigRecTop, HIGH);
+           digitalWrite(trigRecHTop, HIGH);
+           digitalWrite(trigRecHBot, HIGH);
+           digitalWrite(trigRecBot, HIGH);
+           state = 5;
+           break;
+        case 5:
+          
         default:      
-           digitalWrite(trigPin1, LOW);
-           digitalWrite(trigPin2, LOW);
-           digitalWrite(trigPin3, LOW);
-           digitalWrite(trigPin4, LOW);
+           digitalWrite(trigTranTop, LOW);
+           digitalWrite(trigTranHTop, LOW);
+           digitalWrite(trigTranHBot, LOW);
+           digitalWrite(trigTranBot, LOW);    
+           digitalWrite(trigRecTop, LOW);
+           digitalWrite(trigRecHTop, LOW);
+           digitalWrite(trigRecHBot, LOW);
+           digitalWrite(trigRecBot, LOW);
            state = 0;                                // and return state to normal 0
            break;
      }
+}
+
+float CalculateAngles(float fixedlength1, float fixedlength2, float length1, float length2, float diagonal1, float diagonal2)
+{
+  float angle1, angle2;
+  if(diagonal1 < 50 && diagonal2 < 50)
+  {
+    angle1 = (pow(fixedlength1,2) + pow(length1,2) - pow(diagonal2,2))/(2*fixedlength1*length1);
+    angle2 = (pow(fixedlength2,2) + pow(length2,2) - pow(diagonal1,2))/(2*fixedlength2*length2);   
+  }
+  return angle1;
+  // Angle 2 wil come after getting sin inverse code
 }
 
 // --------------------------
@@ -106,67 +269,237 @@ void trigger_pulse()
 // Note: this routine does not handle the case where the timer
 //       counter overflows which will result in the occassional error.
 
-void echo_interrupt2()
+void echo_interruptLeftCalf()
 {
-  switch (digitalRead(echoPin2))                     // Test to see if the signal is high or low
+  switch (digitalRead(echoLeftCalf))                     // Test to see if the signal is high or low
   {
     case HIGH:                                      // High so must be the start of the echo pulse
-      if(trigger_time_count > TICK_COUNTS/2)
+      echoLeftCalf_end = 0;
+      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
+    case LOW:                                       // Low so must be the end of hte echo pulse
+      echoLeftCalf_end = micros();
+      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
+  }
+}
+
+void echo_interruptRightCalf()
+{
+  switch (digitalRead(echoRightCalf))                     // Test to see if the signal is high or low
+  {
+    case HIGH:                                      // High so must be the start of the echo pulse
+        echoRightCalf_end = 0;                                 
+        echoRightCalf_start = micros();                        
+      
+    case LOW:                                       // Low so must be the end of hte echo pul
+        echoRightCalf_end = micros();
+        echoRightCalf_duration = echoRightCalf_end - echoRightCalf_start;
+  }
+}
+
+void echo_interruptRecTop()
+{
+  switch (digitalRead(echoRecTop))                     // Test to see if the signal is high or low
+  {
+    case HIGH:                                      // High so must be the start of the echo pulse
+      if(trigger_time_count > TICK_COUNTS*3/4)
       {
-        echo21_end = 0;
-        echo21_start = micros();
+        echoTopTop_end = 0;
+        echoTopTop_start = micros();
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopTop_end = 0;                                 // Clear the end time
+        echoHTopTop_start = micros();                        // Save the start time
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotTop_end = 0;
+        echoHBotTop_start = micros();
       }
       else
-      {  
-        echo22_end = 0;                                 // Clear the end time
-        echo22_start = micros();                        // Save the start time
+      {
+        echoBotTop_end = 0;
+        echoBotTop_start = micros();
       }
       break;
       
     case LOW:                                       // Low so must be the end of hte echo pulse
-      if(trigger_time_count > TICK_COUNTS/2)
-      { 
-        echo21_end = micros();                          // Save the end time
-        echo21_duration = echo21_end - echo21_start;        // Calculate the pulse duration
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopTop_end = micros();
+        echoTopTop_duration = echoTopTop_end - echoTopTop_start;
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopTop_end = micros();                                 
+        echoHTopTop_duration = echoHTopTop_end - echoHTopTop_start; 
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotTop_end = micros();
+        echoHBotTop_duration = echoHBotTop_end - echoHBotTop_start;
       }
       else
       {
-        echo22_end = micros();
-        echo22_duration = echo22_end - echo22_start;
-      }
+        echoBotTop_end = micros();
+        echoBotTop_duration = echoBotTop_end - echoBotTop_start;
+      }      
       break;
   }
 }
 
-void echo_interrupt1()
+void echo_interruptRecHTop()
 {
-  switch (digitalRead(echoPin1))                     // Test to see if the signal is high or low
+  switch (digitalRead(echoRecHTop))                     // Test to see if the signal is high or low
   {
     case HIGH:                                      // High so must be the start of the echo pulse
-      if(trigger_time_count > TICK_COUNTS/2)
+      if(trigger_time_count > TICK_COUNTS*3/4)
       {
-        echo11_end = 0;
-        echo11_start = micros();
+        echoTopHTop_end = 0;
+        echoTopHTop_start = micros();
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopHTop_end = 0;                                 // Clear the end time
+        echoHTopHTop_start = micros();                        // Save the start time
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotHTop_end = 0;
+        echoHBotHTop_start = micros();
       }
       else
-      {  
-        echo12_end = 0;                                 // Clear the end time
-        echo12_start = micros();                        // Save the start time
+      {
+        echoBotHTop_end = 0;
+        echoBotHTop_start = micros();
       }
       break;
       
     case LOW:                                       // Low so must be the end of hte echo pulse
-      if(trigger_time_count > TICK_COUNTS/2)
-      { 
-        echo11_end = micros();                          // Save the end time
-        echo11_duration = echo11_end - echo11_start;        // Calculate the pulse duration
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopHTop_end = micros();
+        echoTopHTop_duration = echoTopHTop_end - echoTopTop_start;
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopHTop_end = micros();                                 
+        echoHTopHTop_duration = echoHTopHTop_end - echoHTopHTop_start; 
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotHTop_end = micros();
+        echoHBotHTop_duration = echoHBotHTop_end - echoHBotHTop_start;
       }
       else
       {
-        echo12_end = micros();
-        echo12_duration = echo12_end - echo12_start;
-      }
+        echoBotHTop_end = micros();
+        echoBotHTop_duration = echoBotHTop_end - echoBotHTop_start;
+      }      
       break;
   }
 }
 
+void echo_interruptRecHBot()
+{
+  switch (digitalRead(echoRecHBot))                     // Test to see if the signal is high or low
+  {
+    case HIGH:                                      // High so must be the start of the echo pulse
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopHBot_end = 0;
+        echoTopHBot_start = micros();
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopHBot_end = 0;                                 // Clear the end time
+        echoHTopHBot_start = micros();                        // Save the start time
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotHBot_end = 0;
+        echoHBotHBot_start = micros();
+      }
+      else
+      {
+        echoBotHBot_end = 0;
+        echoBotHBot_start = micros();
+      }
+      break;
+      
+    case LOW:                                       // Low so must be the end of hte echo pulse
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopHBot_end = micros();
+        echoTopHBot_duration = echoTopHBot_end - echoTopHBot_start;
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopHBot_end = micros();                                 
+        echoHTopHBot_duration = echoHTopHBot_end - echoHTopHBot_start; 
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotHBot_end = micros();
+        echoHBotHBot_duration = echoHBotHBot_end - echoHBotHBot_start;
+      }
+      else
+      {
+        echoBotHBot_end = micros();
+        echoBotHBot_duration = echoBotHBot_end - echoBotHBot_start;
+      }      
+      break;
+  }
+}
+
+void echo_interruptRecBot()
+{
+  switch (digitalRead(echoRecBot))                     // Test to see if the signal is high or low
+  {
+    case HIGH:                                      // High so must be the start of the echo pulse
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopBot_end = 0;
+        echoTopBot_start = micros();
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopBot_end = 0;                                 // Clear the end time
+        echoHTopBot_start = micros();                        // Save the start time
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotBot_end = 0;
+        echoHBotBot_start = micros();
+      }
+      else
+      {
+        echoBotBot_end = 0;
+        echoBotBot_start = micros();
+      }
+      break;
+      
+    case LOW:                                       // Low so must be the end of hte echo pulse
+      if(trigger_time_count > TICK_COUNTS*3/4)
+      {
+        echoTopBot_end = micros();
+        echoTopBot_duration = echoTopBot_end - echoTopBot_start;
+      }
+      else if(trigger_time_count > TICK_COUNTS/2)
+      {  
+        echoHTopBot_end = micros();                                 
+        echoHTopBot_duration = echoHTopBot_end - echoHTopBot_start; 
+      }
+      else if(trigger_time_count > TICK_COUNTS/4)
+      {
+        echoHBotBot_end = micros();
+        echoHBotBot_duration = echoHBotBot_end - echoHBotBot_start;
+      }
+      else
+      {
+        echoBotBot_end = micros();
+        echoBotBot_duration = echoBotBot_end - echoBotBot_start;
+      }      
+      break;
+  }
+}
