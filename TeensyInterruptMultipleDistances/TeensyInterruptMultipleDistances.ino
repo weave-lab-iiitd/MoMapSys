@@ -1,23 +1,19 @@
 #include <TimerOne.h>                                 // Header file for TimerOne library
 
-#define trigTranTop 0                                 // trigger for transmitterTop
-#define trigTranHTop 1                                // trigger for transmitterHalfTop
+#define trigTranTop 9                                 // trigger for transmitterTop
+#define trigTranHTop 10                                // trigger for transmitterHalfTop
 #define trigTranHBot 11                               // trigger for transmitterHalfBottom
 #define trigTranBot 12                                // trigger for transmitterBottom
-#define trigLeftCalf 3                                // trigger for leftCalf
-#define trigRightCalf 5                               // trigger for rightCalf
-#define trigRecTop 7                                  // trigger for recieverTop
-#define trigRecHTop 9                                 // trigger for recieverHalfTop  
-#define trigRecHBot 22                                // trigger for recieverHalfBottom
-#define trigRecBot 21                                 // trigger for recieverBottom
-#define echoLeftCalf 4                                // echo pin for leftCalf
-#define echoRightCalf 6                               // echo pin for rightCalf
-#define echoRecTop 8                                  // echoPin for recieverTop
-#define echoRecHTop 10                                // echoPin for recieverHalfTop
-#define echoRecHBot 23                                // echoPin for recieverHalfBottom
-#define echoRecBot 20                                 // echoPin for recieverBottom
+#define trigRecTop 0                                  // trigger for recieverTop
+#define trigRecHTop 2                                 // trigger for recieverHalfTop  
+#define trigRecHBot 4                                // trigger for recieverHalfBottom
+#define trigRecBot 6                                 // trigger for recieverBottom
+#define echoRecTop 1                                  // echoPin for recieverTop
+#define echoRecHTop 3                                // echoPin for recieverHalfTop
+#define echoRecHBot 5                                // echoPin for recieverHalfBottom
+#define echoRecBot 7                                 // echoPin for recieverBottom
 
-#define TIMER_US 10                                   // 10 uS timer duration 
+#define TIMER_US 20                                   // 10 uS timer duration 
 #define TICK_COUNTS 6000                              
 
 volatile long echoTopBot_start = 0;                        // Records start of echo pulse
@@ -36,8 +32,6 @@ volatile long echoBotBot_start = 0;
 volatile long echoBotHBot_start = 0;
 volatile long echoBotHTop_start = 0;
 volatile long echoBotTop_start = 0;
-volatile long echoLeftCalf_start = 0;
-volatile long echoRightCalf_start = 0;
 volatile long echoTopBot_end = 0;   
 volatile long echoTopHBot_end = 0;
 volatile long echoTopHTop_end = 0;
@@ -54,8 +48,6 @@ volatile long echoBotBot_end = 0;
 volatile long echoBotHBot_end = 0;
 volatile long echoBotHTop_end = 0;
 volatile long echoBotTop_end = 0;
-volatile long echoLeftCalf_end = 0;
-volatile long echoRightCalf_end = 0;
 volatile long echoTopBot_duration = 0;                        // Records start of echo pulse
 volatile long echoTopHBot_duration = 0;
 volatile long echoTopHTop_duration = 0;
@@ -72,9 +64,8 @@ volatile long echoBotBot_duration = 0;
 volatile long echoBotHBot_duration = 0;
 volatile long echoBotHTop_duration = 0;
 volatile long echoBotTop_duration = 0;
-volatile long echoLeftCalf_duration = 0;
-volatile long echoRightCalf_duration = 0;
-volatile int trigger_time_count = 0;                  // Count down counter to trigger pulse time
+volatile int trigger_time_count = 0;                     // Count down counter to trigger pulse time
+static volatile int state = 0;                           // State machine variable
 float Lateralangle;
 float rotAngle;
 float CalculateAngles(float,float,float,float,float,float);
@@ -91,16 +82,12 @@ void setup()
   pinMode(trigRecHTop, OUTPUT);
   pinMode(trigRecHBot, OUTPUT);
   pinMode(trigRecBot, OUTPUT);
-  pinMode(echoLeftCalf, INPUT);                            // Echo pin set to input
-  pinMode(echoRightCalf, INPUT);
   pinMode(echoRecTop, INPUT);
   pinMode(echoRecHTop, INPUT);
   pinMode(echoRecHBot, INPUT);
   pinMode(echoRecBot, INPUT);
   Timer1.initialize(TIMER_US);                        // Initialise timer 1
   Timer1.attachInterrupt( timerIsr );                 // Attach interrupt to the timer service routine 
-  attachInterrupt(echoLeftCalf, echo_interruptLeftCalf, CHANGE);  // Attach interrupt to the sensor echo input
-  attachInterrupt(echoRightCalf, echo_interruptRightCalf, CHANGE);
   attachInterrupt(echoRecTop, echo_interruptRecTop, CHANGE);
   attachInterrupt(echoRecHTop, echo_interruptRecHTop, CHANGE);
   attachInterrupt(echoRecHBot, echo_interruptRecHBot, CHANGE);
@@ -122,7 +109,7 @@ void loop()
     Serial.print((float)echoTopHBot_duration * 0.0343);
     Serial.print(", ");
     Serial.print((float)echoTopBot_duration * 0.0343);
-    Serial.println(",");
+    Serial.print(", ;");
     Serial.print((float)echoHTopTop_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoHTopHTop_duration * 0.0343);
@@ -130,7 +117,7 @@ void loop()
     Serial.print((float)echoHTopHBot_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoHTopBot_duration * 0.0343);
-    Serial.println(",");
+    Serial.print(", ;");
     Serial.print((float)echoHBotTop_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoHBotHTop_duration * 0.0343);
@@ -138,7 +125,7 @@ void loop()
     Serial.print((float)echoHBotHBot_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoHBotBot_duration * 0.0343);
-    Serial.println(",");
+    Serial.print(", ;");
     Serial.print((float)echoBotTop_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoBotHTop_duration * 0.0343);
@@ -146,7 +133,7 @@ void loop()
     Serial.print((float)echoBotHBot_duration * 0.0343);
     Serial.print(",");
     Serial.print((float)echoBotBot_duration * 0.0343);
-    Serial.println(",");
+    Serial.print(", ;");
     delay(100);
 }
 
@@ -178,8 +165,7 @@ void timerIsr()
 
 void trigger_pulse()
 {
-      static volatile int state = 0;                 // State machine variable
-      if(!(trigger_time_count))
+  if(!(trigger_time_count))
       {
         state = 1;
         trigger_time_count = TICK_COUNTS;
@@ -269,32 +255,32 @@ float CalculateAngles(float fixedlength1, float fixedlength2, float length1, flo
 // Note: this routine does not handle the case where the timer
 //       counter overflows which will result in the occassional error.
 
-void echo_interruptLeftCalf()
-{
-  switch (digitalRead(echoLeftCalf))                     // Test to see if the signal is high or low
-  {
-    case HIGH:                                      // High so must be the start of the echo pulse
-      echoLeftCalf_end = 0;
-      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
-    case LOW:                                       // Low so must be the end of hte echo pulse
-      echoLeftCalf_end = micros();
-      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
-  }
-}
-
-void echo_interruptRightCalf()
-{
-  switch (digitalRead(echoRightCalf))                     // Test to see if the signal is high or low
-  {
-    case HIGH:                                      // High so must be the start of the echo pulse
-        echoRightCalf_end = 0;                                 
-        echoRightCalf_start = micros();                        
-      
-    case LOW:                                       // Low so must be the end of hte echo pul
-        echoRightCalf_end = micros();
-        echoRightCalf_duration = echoRightCalf_end - echoRightCalf_start;
-  }
-}
+//void echo_interruptLeftCalf()
+//{
+//  switch (digitalRead(echoLeftCalf))                     // Test to see if the signal is high or low
+//  {
+//    case HIGH:                                      // High so must be the start of the echo pulse
+//      echoLeftCalf_end = 0;
+//      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
+//    case LOW:                                       // Low so must be the end of hte echo pulse
+//      echoLeftCalf_end = micros();
+//      echoLeftCalf_duration = echoLeftCalf_end - echoLeftCalf_start;
+//  }
+//}
+//
+//void echo_interruptRightCalf()
+//{
+//  switch (digitalRead(echoRightCalf))                     // Test to see if the signal is high or low
+//  {
+//    case HIGH:                                      // High so must be the start of the echo pulse
+//        echoRightCalf_end = 0;                                 
+//        echoRightCalf_start = micros();                        
+//      
+//    case LOW:                                       // Low so must be the end of hte echo pul
+//        echoRightCalf_end = micros();
+//        echoRightCalf_duration = echoRightCalf_end - echoRightCalf_start;
+//  }
+//}
 
 void echo_interruptRecTop()
 {
